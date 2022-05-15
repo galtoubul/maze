@@ -207,6 +207,9 @@ Events.on(engine, "collisionStart", (event) => {
           Body.setStatic(body, false);
         }
       });
+
+      // Show win message
+      document.querySelector(".winner").classList.remove("hidden");
     }
   });
 });
