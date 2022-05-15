@@ -1,14 +1,15 @@
-const { Engine, Render, Runner, World, Bodies, Body } = Matter;
+const { Engine, Render, Runner, World, Bodies, Body, Events } = Matter;
 
 // Basic conig for using matter.js
-const width = 600;
-const height = 600;
-const rows = 3;
-const columns = 3;
+const width = window.innerWidth;
+const height = window.innerHeight;
+const rows = 10;
+const columns = 14;
 const unitWidth = width / columns;
 const unitHeight = height / rows;
 
 const engine = Engine.create();
+engine.world.gravity.y = 0; // Cancel gravity
 const { world } = engine;
 const render = Render.create({
   element: document.body,
@@ -109,9 +110,8 @@ horizontals.forEach((row, rowIndex) => {
       rowIndex * unitHeight + unitHeight,
       unitWidth,
       10,
-      { isStatic: true }
+      { isStatic: true, label: "wall" }
     );
-    console.log(wall);
     World.add(world, wall);
   });
 });
@@ -126,7 +126,7 @@ verticals.forEach((row, rowIndex) => {
       rowIndex * unitHeight + unitHeight / 2,
       10,
       unitHeight,
-      { isStatic: true }
+      { isStatic: true, label: "wall" }
     );
     console.log(wall);
     World.add(world, wall);
@@ -137,23 +137,28 @@ verticals.forEach((row, rowIndex) => {
 const goal = Bodies.rectangle(
   width - unitWidth / 2,
   height - unitHeight / 2,
-  unitHeight * 0.7,
   unitWidth * 0.7,
+  unitHeight * 0.7,
   {
     isStatic: true,
+    label: "goal",
   }
 );
 World.add(world, goal);
 
 // Add ball
-const ball = Bodies.circle(unitWidth / 2, unitHeight / 2, unitHeight / 4, {
-  isStatic: false,
-});
+const ball = Bodies.circle(
+  unitWidth / 2,
+  unitHeight / 2,
+  Math.min(unitHeight, unitHeight) / 4,
+  {
+    label: "ball",
+  }
+);
 World.add(world, ball);
 
 document.addEventListener("keydown", (event) => {
   const { x, y } = ball.velocity;
-  console.log(x, y);
   if (event.keyCode === 87) {
     Body.setVelocity(ball, { x, y: y - 5 });
   }
@@ -166,4 +171,24 @@ document.addEventListener("keydown", (event) => {
   if (event.keyCode === 65) {
     Body.setVelocity(ball, { x: x - 5, y });
   }
+});
+
+// Recognize win
+Events.on(engine, "collisionStart", (event) => {
+  event.pairs.forEach((collision) => {
+    const labels = ["ball", "goal"];
+    if (
+      labels.includes(collision.bodyA.label) &&
+      labels.includes(collision.bodyB.label)
+    ) {
+      world.gravity.y = 1; // return gravity
+
+      // collapse walls
+      world.bodies.forEach((body) => {
+        if (body.label === "wall") {
+          Body.setStatic(body, false);
+        }
+      });
+    }
+  });
 });
