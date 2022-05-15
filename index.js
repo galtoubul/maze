@@ -1,8 +1,8 @@
 const { Engine, Render, Runner, World, Bodies, Body, Events } = Matter;
 
 // Basic conig for using matter.js
-const width = window.innerWidth;
-const height = window.innerHeight;
+const width = window.innerWidth * 0.9999;
+const height = window.innerHeight * 0.9967;
 const rows = 10;
 const columns = 14;
 const unitWidth = width / columns;
