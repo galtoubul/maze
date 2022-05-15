@@ -3,6 +3,11 @@ const { Engine, Render, Runner, World, Bodies } = Matter;
 // Basic conig for using matter.js
 const width = 600;
 const height = 600;
+const rows = 3;
+const columns = 3;
+const unitWidth = width / columns;
+const unitHeight = height / rows;
+
 const engine = Engine.create();
 const { world } = engine;
 const render = Render.create({
@@ -19,17 +24,14 @@ Runner.run(Runner.create(), engine);
 
 // Walls
 const walls = [
-  Bodies.rectangle(width / 2, 0, width, 40, { isStatic: true }),
-  Bodies.rectangle(width / 2, height, width, 40, { isStatic: true }),
-  Bodies.rectangle(0, height / 2, 40, height, { isStatic: true }),
-  Bodies.rectangle(width, height / 2, 40, height, { isStatic: true }),
+  Bodies.rectangle(width / 2, 0, width, 2, { isStatic: true }),
+  Bodies.rectangle(width / 2, height, width, 2, { isStatic: true }),
+  Bodies.rectangle(0, height / 2, 2, height, { isStatic: true }),
+  Bodies.rectangle(width, height / 2, 2, height, { isStatic: true }),
 ];
 World.add(world, walls);
 
 // Maze generation
-
-const rows = 3;
-const columns = 3;
 
 // 2D array representing the visited cell (true iff visited)
 const grid = Array(rows)
@@ -58,7 +60,6 @@ const stepThroughCell = (row, column) => {
     [row, column - 1, "left"],
   ];
   shuffle(neighbors);
-  console.log(neighbors);
 
   for (let neighbor of neighbors) {
     const [nextRow, nextColumn, direction] = neighbor;
@@ -77,10 +78,15 @@ const stepThroughCell = (row, column) => {
     // Make a step
 
     // Update borders
-    updatedColumn = direction === "left" ? column - 1 : column;
-    verticals[row][updatedColumn] = true;
-    updatedRow = direction === "up" ? row - 1 : row;
-    horizontals[updatedRow][column] = true;
+    if (direction === "left") {
+      verticals[row][column - 1] = true;
+    } else if (direction === "right") {
+      verticals[row][column] = true;
+    } else if (direction === "up") {
+      horizontals[row - 1][column] = true;
+    } else if (direction === "down") {
+      horizontals[row][column] = true;
+    }
 
     // Step
     stepThroughCell(nextRow, nextColumn);
@@ -91,4 +97,57 @@ const startRow = Math.floor(Math.random() * rows);
 const startColumn = Math.floor(Math.random() * columns);
 stepThroughCell(startRow, startColumn);
 
+// Draw walls
+
+horizontals.forEach((row, rowIndex) => {
+  row.forEach((open, columnIndex) => {
+    if (open) {
+      return;
+    }
+    const wall = Bodies.rectangle(
+      columnIndex * unitWidth + unitWidth / 2,
+      rowIndex * unitHeight + unitHeight,
+      unitWidth,
+      10,
+      { isStatic: true }
+    );
+    console.log(wall);
+    World.add(world, wall);
+  });
+});
+
+verticals.forEach((row, rowIndex) => {
+  row.forEach((open, columnIndex) => {
+    if (open) {
+      return;
+    }
+    const wall = Bodies.rectangle(
+      columnIndex * unitWidth + unitWidth,
+      rowIndex * unitHeight + unitHeight / 2,
+      10,
+      unitHeight,
+      { isStatic: true }
+    );
+    console.log(wall);
+    World.add(world, wall);
+  });
+});
+
+// Add goal
+const goal = Bodies.rectangle(
+  width - unitWidth / 2,
+  height - unitHeight / 2,
+  unitHeight * 0.7,
+  unitWidth * 0.7,
+  {
+    isStatic: true,
+  }
+);
+World.add(world, goal);
+
+// Add ball
+const ball = Bodies.circle(unitWidth / 2, unitHeight / 2, unitHeight / 4, {
+  isStatic: false,
+});
+World.add(world, ball);
 
